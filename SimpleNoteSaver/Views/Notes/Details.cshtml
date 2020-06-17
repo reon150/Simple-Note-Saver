@@ -1,0 +1,18 @@
+﻿@model SimpleNoteSaver.Models.Notes
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<div class="row">
+    <div class="col-sm-6 mx-auto">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title text-center">@Html.DisplayFor(model => model.Title)</h1>
+                <p class="card-text">@Html.DisplayFor(model => model.Description)</p>
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary float-left">Edit<i class="fas fa-edit ml-2"></i></a>
+                <a asp-action="Index" class="btn btn-primary float-right">Back to List<i class="fas fa-list ml-2"></i></a>
+            </div>
+        </div>
+    </div>
+</div>

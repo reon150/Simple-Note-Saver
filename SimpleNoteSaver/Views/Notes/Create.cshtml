@@ -1,0 +1,47 @@
+﻿@model SimpleNoteSaver.Models.Notes
+
+@{
+    if (ViewData["Mode"].ToString() == "create")
+    {
+        ViewData["Title"] = "Create";
+        ViewData["SecondTitle"] = "Create New Note";
+        ViewData["Button"] = "Save";
+        ViewData["Action"] = "Create";
+    }
+    else
+    {
+        ViewData["Title"] = "Edit";
+        ViewData["SecondTitle"] = "Edit Note";
+        ViewData["Button"] = "Edit";
+        ViewData["Action"] = "Edit";
+    }
+}
+
+<div class="col-md-6 mx-auto">
+    <div class="card text-center">
+        <div class="card-header">
+            <h3>@ViewData["SecondTitle"]</h3>
+        </div>
+        <div class="card-body">
+            <form asp-action=@ViewData["Action"]>
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <div class="form-group">
+                    <input type="text" asp-for="Title" class="form-control" placeholder="Title" required autofocus>
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <textarea asp-for="Description" class="form-control" rows="10" placeholder="Description"></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+                <input type="hidden" name="UserId" value="@ViewData["UserId"]" />
+                <div class="form-group">
+                    <button class="btn btn-dark btn-block" type="submit">@ViewData["Button"]</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
