@@ -117,7 +117,7 @@ namespace SimpleNoteSaver.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["UserId"] = getCurrentUserId();//new SelectList(context.Users, "Id", "Id", note.UserId);
+            ViewData["UserId"] = getCurrentUserId();
             return View(note);
         }
 
