@@ -1,27 +1,30 @@
 ﻿using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SimpleNoteSaver.Data;
 using SimpleNoteSaver.Models;
+using SimpleNoteSaver.Services.Interfaces;
 
 namespace SimpleNoteSaver.Controllers
 {
     public class NotesController : Controller
     {
-        private readonly ApplicationDbContext context;
+        private readonly ApplicationDbContext _context;
+        private readonly IUsersServices _userServices;
 
-        public NotesController(ApplicationDbContext context)
+        public NotesController(ApplicationDbContext context, IUsersServices userServices)
         {
-            this.context = context;
+            this._context = context;
+            this._userServices = userServices;
         }
 
 
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = context.Note.Where(n => n.UserId == getCurrentUserId());
+            var currentUser = await _userServices.GetCurrentUser(this.User);
+            var applicationDbContext = _context.Note.Where(n => n.UserId == currentUser.Id);
             return View(await applicationDbContext.ToListAsync());
         }
 
@@ -33,7 +36,7 @@ namespace SimpleNoteSaver.Controllers
                 return NotFound();
             }
 
-            var note = await context.Note
+            var note = await _context.Note
                 .Include(n => n.User)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (note == null)
@@ -45,9 +48,10 @@ namespace SimpleNoteSaver.Controllers
         }
 
         [HttpGet]
-        public IActionResult Create()
+        public async Task<IActionResult> CreateAsync()
         {
-            ViewData["UserId"] = getCurrentUserId();
+            var currentUser = await _userServices.GetCurrentUser(this.User);
+            ViewData["UserId"] = currentUser.Id;
             ViewData["Mode"] = "create";
             return View();
         }
@@ -56,12 +60,12 @@ namespace SimpleNoteSaver.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Title,Description,UserId")] Notes note)
         {
-            if (!validateUserId(note.UserId)) return Unauthorized();
+            if (!(await _userServices.ValidateUserId(note.UserId, this.User)) ) return Unauthorized();
 
             if (ModelState.IsValid)
             {
-                context.Add(note);
-                await context.SaveChangesAsync();
+                _context.Add(note);
+                await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
             
@@ -77,13 +81,14 @@ namespace SimpleNoteSaver.Controllers
                 return NotFound();
             }
 
-            var note = await context.Note.FindAsync(id);
+            var note = await _context.Note.FindAsync(id);
             if (note == null)
             {
                 return NotFound();
             }
 
-            ViewData["UserId"] = getCurrentUserId();
+            var currentUser = await _userServices.GetCurrentUser(this.User);
+            ViewData["UserId"] = currentUser.Id;
             ViewData["Mode"] = "edit";
             return View("Create", note);
         }
@@ -97,12 +102,14 @@ namespace SimpleNoteSaver.Controllers
                 return NotFound();
             }
 
+            if (!(await _userServices.ValidateUserId(note.UserId, this.User))) return Unauthorized();
+
             if (ModelState.IsValid)
             {
                 try
                 {
-                    context.Update(note);
-                    await context.SaveChangesAsync();
+                    _context.Update(note);
+                    await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -117,7 +124,8 @@ namespace SimpleNoteSaver.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["UserId"] = getCurrentUserId();
+            var currentUser = await _userServices.GetCurrentUser(this.User);
+            ViewData["UserId"] = currentUser.Id;
             return View(note);
         }
 
@@ -129,7 +137,7 @@ namespace SimpleNoteSaver.Controllers
                 return NotFound();
             }
 
-            var note = await context.Note
+            var note = await _context.Note
                 .Include(n => n.User)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (note == null)
@@ -144,29 +152,28 @@ namespace SimpleNoteSaver.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var note = await context.Note.FindAsync(id);
-            context.Note.Remove(note);
-            await context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            
+            var note = await _context.Note.FindAsync(id);
+
+            if (await _userServices.ValidateUserId(note.UserId, this.User)) 
+            {
+                _context.Note.Remove(note);
+
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+            else 
+            {
+                return Unauthorized();
+            }
+            
         }
 
         private bool NoteExists(int id)
         {
-            return context.Note.Any(e => e.Id == id);
+            return _context.Note.Any(e => e.Id == id);
         }
 
-        private string getCurrentUserId()
-        {
-            ClaimsPrincipal currentUser = this.User;
-            var currentUserID = currentUser.FindFirst(ClaimTypes.NameIdentifier).Value;
-            var UserId = currentUserID;
-            return UserId;
-        }
 
-        private bool validateUserId(string userId)
-        {
-            if (userId == getCurrentUserId()) return true;
-            else return false;
-        }
     }
 }

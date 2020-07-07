@@ -8,6 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
+using SimpleNoteSaver.Services.Interfaces;
+using SimpleNoteSaver.Services;
 
 namespace SimpleNoteSaver
 {
@@ -28,6 +30,8 @@ namespace SimpleNoteSaver
             services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
                 .AddEntityFrameworkStores<ApplicationDbContext>();
             services.AddControllersWithViews();
+
+            services.AddScoped<IUsersServices, UsersServices>();
 
             services.AddRazorPages();
 
