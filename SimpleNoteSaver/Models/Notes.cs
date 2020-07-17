@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using System;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 
 namespace SimpleNoteSaver.Models
 {
@@ -18,6 +20,10 @@ namespace SimpleNoteSaver.Models
         public string UserId { get; set; }
         public IdentityUser User { get; set; }
 
+        internal IQueryable<Notes> ToListAsync()
+        {
+            throw new NotImplementedException();
+        }
     }
 
 }

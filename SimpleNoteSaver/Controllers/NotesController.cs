@@ -1,31 +1,32 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SimpleNoteSaver.Data;
 using SimpleNoteSaver.Models;
-using SimpleNoteSaver.Services.Interfaces;
+using SimpleNoteSaver.Repositories;
 
 namespace SimpleNoteSaver.Controllers
 {
     public class NotesController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly IUsersServices _userServices;
+        private readonly IUsersRepository _userServices;
+        private readonly INotesRepository _noteServices;
 
-        public NotesController(ApplicationDbContext context, IUsersServices userServices)
+        public NotesController(ApplicationDbContext context, IUsersRepository userServices, INotesRepository noteServices)
         {
-            this._context = context;
-            this._userServices = userServices;
+            _context = context;
+            _userServices = userServices;
+            _noteServices = noteServices;
         }
 
 
         public async Task<IActionResult> Index()
         {
             var currentUser = await _userServices.GetCurrentUser(this.User);
-            var applicationDbContext = _context.Note.Where(n => n.UserId == currentUser.Id);
-            return View(await applicationDbContext.ToListAsync());
+            var notes = await _noteServices.GetNotes(currentUser.Id);
+            return View(notes);
         }
 
         [HttpGet]
@@ -36,9 +37,8 @@ namespace SimpleNoteSaver.Controllers
                 return NotFound();
             }
 
-            var note = await _context.Note
-                .Include(n => n.User)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var note = await _noteServices.GetOneNote(id ?? default);
+
             if (note == null)
             {
                 return NotFound();
@@ -64,12 +64,14 @@ namespace SimpleNoteSaver.Controllers
 
             if (ModelState.IsValid)
             {
-                _context.Add(note);
-                await _context.SaveChangesAsync();
+                await _noteServices.CreateNote(note);
                 return RedirectToAction(nameof(Index));
             }
+            else 
+            {
+                return View(note);
+            }
             
-            return View(note);
         }
 
         [HttpGet]
@@ -113,7 +115,7 @@ namespace SimpleNoteSaver.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!NoteExists(note.Id))
+                    if (_noteServices.NoteExists(note.Id) == false)
                     {
                         return NotFound();
                     }
@@ -137,9 +139,8 @@ namespace SimpleNoteSaver.Controllers
                 return NotFound();
             }
 
-            var note = await _context.Note
-                .Include(n => n.User)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var note = await _noteServices.GetOneNote(id ?? default);
+
             if (note == null)
             {
                 return NotFound();
@@ -157,9 +158,7 @@ namespace SimpleNoteSaver.Controllers
 
             if (await _userServices.ValidateUserId(note.UserId, this.User)) 
             {
-                _context.Note.Remove(note);
-
-                await _context.SaveChangesAsync();
+                await _noteServices.DeleteNote(note);
                 return RedirectToAction(nameof(Index));
             }
             else 
@@ -168,12 +167,6 @@ namespace SimpleNoteSaver.Controllers
             }
             
         }
-
-        private bool NoteExists(int id)
-        {
-            return _context.Note.Any(e => e.Id == id);
-        }
-
 
     }
 }

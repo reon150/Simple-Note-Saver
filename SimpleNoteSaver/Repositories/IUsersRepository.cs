@@ -5,9 +5,9 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
-namespace SimpleNoteSaver.Services.Interfaces
+namespace SimpleNoteSaver.Repositories
 {
-    public interface IUsersServices
+    public interface IUsersRepository
     {
         Task<IdentityUser> GetCurrentUser(ClaimsPrincipal claimsPrincipal);
         Task<bool> ValidateUserId(string userId, ClaimsPrincipal User);

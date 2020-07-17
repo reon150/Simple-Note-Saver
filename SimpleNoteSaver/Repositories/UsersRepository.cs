@@ -1,25 +1,21 @@
 ﻿using System;
 using Microsoft.AspNetCore.Identity;
-using SimpleNoteSaver.Data;
-using SimpleNoteSaver.Services.Interfaces;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
-namespace SimpleNoteSaver.Services
+namespace SimpleNoteSaver.Repositories
 {
-    public class UsersServices : IUsersServices
+    public class UsersRepository : IUsersRepository
     {
-        private readonly ApplicationDbContext _context;
         private readonly UserManager<IdentityUser> _userManager;
-        public UsersServices(ApplicationDbContext context, UserManager<IdentityUser> userManager)
+        public UsersRepository(UserManager<IdentityUser> userManager)
         {
-            _context = context;
             _userManager = userManager;
         }
 
         public async Task<IdentityUser> GetCurrentUser(ClaimsPrincipal claimsPrincipal)
         {
-            var currentUser = new IdentityUser();
+            IdentityUser currentUser;
             try
             {
                 currentUser = await _userManager.GetUserAsync(claimsPrincipal);

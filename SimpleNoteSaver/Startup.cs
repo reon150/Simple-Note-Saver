@@ -8,8 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
-using SimpleNoteSaver.Services.Interfaces;
-using SimpleNoteSaver.Services;
+using SimpleNoteSaver.Repositories;
 
 namespace SimpleNoteSaver
 {
@@ -31,7 +30,9 @@ namespace SimpleNoteSaver
                 .AddEntityFrameworkStores<ApplicationDbContext>();
             services.AddControllersWithViews();
 
-            services.AddScoped<IUsersServices, UsersServices>();
+            services.AddScoped<INotesRepository, NotesRepository>();
+            services.AddScoped<IUsersRepository, UsersRepository>();
+            
 
             services.AddRazorPages();
 
